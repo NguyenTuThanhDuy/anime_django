@@ -19,5 +19,5 @@ from django.urls import path
 from library import views
 
 urlpatterns = [
-    path('api/v1/videos', views.get_videos, name="signup"),
+    path('api/v1/videos', views.get_videos, name="videos"),
 ]

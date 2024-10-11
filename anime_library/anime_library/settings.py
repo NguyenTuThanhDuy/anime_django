@@ -57,14 +57,18 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True  # If this is used then `CORS_ALLOWED_ORIGINS` will not have any effect
+CORS_ALLOW_ALL_ORIGINS = False  # If this is used then `CORS_ALLOWED_ORIGINS` will not have any effect
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
+    'http://localhost',
 ]  # If this is used, then not need to use `CORS_ALLOW_ALL_ORIGINS = True`
 CORS_ALLOWED_ORIGIN_REGEXES = [
-    'http://localhost:5173',
+    'http://localhost',
 ]
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost',
+]
+
 
 ROOT_URLCONF = 'anime_library.urls'
 
@@ -168,3 +172,13 @@ SIMPLE_JWT = {
     'SIGNING_KEY': SECRET_KEY,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+# Session Cookie Settings
+SESSION_COOKIE_SECURE = False         # Ensure cookies are sent over HTTP
+SESSION_COOKIE_HTTPONLY = True        # Cookies are not accessible via JavaScript
+SESSION_COOKIE_SAMESITE = 'Lax'       # Controls cross-site cookie sending
+
+# CSRF Cookie Settings
+CSRF_COOKIE_SECURE = False            # Ensure CSRF cookie is sent over HTTP
+CSRF_COOKIE_HTTPONLY = True          # Allow JavaScript to access CSRF cookie if needed
+CSRF_COOKIE_SAMESITE = 'Lax'          # Controls cross-site cookie sending

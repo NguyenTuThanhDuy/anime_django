@@ -1,7 +1,9 @@
 from datetime import datetime
+import re
 
 from rest_framework import status
 from rest_framework.decorators import api_view
+from rest_framework.request import Request
 from rest_framework.response import Response
 
 
@@ -9,7 +11,12 @@ from rest_framework.response import Response
 
 
 @api_view(['GET'])
-def get_videos(request):
+def get_videos(request: Request):
+    query_params = request.query_params
+    limit = int(query_params.get("limit", 20))
+    offset = int(query_params.get("offset", 0))
+
+    query_title = query_params.get("title")
     data = [
         {
             "id": "1",
@@ -124,4 +131,9 @@ def get_videos(request):
             "videoUrl": "https:storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
         },
     ]
-    return Response({'msg': 'Get videos successfully', 'videos': data}, status=status.HTTP_200_OK)
+    if not query_title:
+        return Response({'msg': 'Get videos successfully', 'videos': data[offset: limit + offset]}, status=status.HTTP_200_OK)
+    pattern = f".*({query_title}.*)"
+
+    response_data = [x for x in data if re.search(pattern, x['title'], re.IGNORECASE)]
+    return Response({'msg': 'Get videos successfully', 'videos': response_data[offset: limit + offset]}, status=status.HTTP_200_OK)

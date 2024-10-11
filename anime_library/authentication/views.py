@@ -1,10 +1,11 @@
-from django.http import HttpResponse
+from django.http import JsonResponse
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.request import Request
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_spectacular.utils import extend_schema, OpenApiExample
 
@@ -34,7 +35,7 @@ from authentication.serializers import UserSerializer, UserAccountInfoSerializer
     ]
 )
 @api_view(['POST'])
-def login(request):
+def login(request: Request):
     username = request.data.get('username')
     password = request.data.get('password')
 
@@ -47,10 +48,11 @@ def login(request):
             access_token = str(refresh.access_token)
 
             # Create a response object
-            response = Response(
+            response = JsonResponse(
                 {
-                    'refresh': str(refresh),
-                    'access': access_token,
+                    'user_id': user.id,
+                    'refresh_token': str(refresh),
+                    'access_token': access_token,
                 },
                 status=status.HTTP_200_OK
             )
@@ -59,10 +61,12 @@ def login(request):
             response.set_cookie(
                 key='access_token',
                 value=access_token,
-                httponly=True,  # Prevent JavaScript access to the cookie
-                secure=True,  # Use Secure cookies (HTTPS), remove this if using localhost without HTTPS
-                samesite='Lax',  # Control cross-site request behavior
-                max_age=60  # Lifetime of the cookie (in seconds)
+                max_age=120,         # Optional: lifespan of the cookie in seconds
+                path='/',             # Path where the cookie is valid
+                domain="localhost",          # Domain where the cookie is valid
+                secure=False,         # Since using HTTP, ensure 'secure' is False
+                httponly=True,       # If True, client-side JavaScript cannot access the cookie
+                samesite='Lax',       # Controls cross-site request behavior ('Lax', 'Strict', 'None')
             )
 
             return response
