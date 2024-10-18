@@ -61,12 +61,21 @@ def login(request: Request):
             response.set_cookie(
                 key='access_token',
                 value=access_token,
-                max_age=120,         # Optional: lifespan of the cookie in seconds
-                path='/',             # Path where the cookie is valid
-                domain="localhost",          # Domain where the cookie is valid
+                max_age=300,         # Optional: lifespan of the cookie in seconds
+                # path='/',             # Path where the cookie is valid
+                # domain="localhost",          # Domain where the cookie is valid
                 secure=False,         # Since using HTTP, ensure 'secure' is False
-                httponly=True,       # If True, client-side JavaScript cannot access the cookie
+                httponly=False,       # If True, client-side JavaScript cannot access the cookie
                 samesite='Lax',       # Controls cross-site request behavior ('Lax', 'Strict', 'None')
+            )
+
+            response.set_cookie(
+                key='refresh_token',
+                value=str(refresh),
+                httponly=False,
+                secure=False,  # Set to True in production (for HTTPS)
+                samesite='Lax',
+                max_age=3600,  # Token expiry in seconds
             )
 
             return response
