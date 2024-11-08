@@ -20,9 +20,9 @@ from rest_framework_simplejwt import views as jwt_views
 from authentication import views
 
 urlpatterns = [
-    path('api/v1/signup', views.signup, name="signup"),
-    path('api/v1/login', views.login, name="login"),
-    path('api/v1/users/<int:user_id>/', views.update_user_account_info, name='update_user_account_info'),
-    path('api/v1/token/', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/v1/token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/v1/auth/signup', views.signup, name="signup"),
+    path('api/v1/auth/login', views.login, name="login"),
+    path('api/v1/users/<int:user_id>', views.update_user_account_info, name='update_user_account_info'),
+    path('api/v1/auth/token', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/v1/auth/refresh', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
 ]
