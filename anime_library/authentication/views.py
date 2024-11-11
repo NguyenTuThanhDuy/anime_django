@@ -1,18 +1,54 @@
 from django.http import JsonResponse
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-from django.contrib.auth.hashers import check_password
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenRefreshView
 from drf_spectacular.utils import extend_schema, OpenApiExample
 
 from authentication.models import UserAccountInfo
 from authentication.serializers import UserSerializer, UserAccountInfoSerializer, ErrorSerializer
 # Create your views here.
 
+class CustomTokenRefreshView(TokenRefreshView):
+    def post(self, request, *args, **kwargs):
+
+        try:
+            refresh_token = request.COOKIES.get('refresh_token')
+            request.data['refresh'] = refresh_token
+
+            response = super().post(request, *args, **kwargs)
+
+            tokens = response.data
+
+            access_token = tokens['access']
+
+            response = JsonResponse(
+                {
+                    'refresh_token': refresh_token,
+                    'access_token': access_token,
+                },
+                status=status.HTTP_200_OK
+            )
+
+            # Set access token as an HTTP-only cookie
+            response.set_cookie(
+                key='access_token',
+                value=access_token,
+                max_age=60,         # Optional: lifespan of the cookie in seconds
+                # path='/',             # Path where the cookie is valid
+                # domain="localhost",          # Domain where the cookie is valid
+                secure=False,         # Since using HTTP, ensure 'secure' is False
+                httponly=False,       # If True, client-side JavaScript cannot access the cookie
+                samesite='Lax',       # Controls cross-site request behavior ('Lax', 'Strict', 'None')
+            )
+
+            return response
+        except:
+            return Response({'refreshed': False}, status=status.HTTP_401_UNAUTHORIZED)
 
 @extend_schema(
     operation_id="user_login",
@@ -61,7 +97,7 @@ def login(request: Request):
             response.set_cookie(
                 key='access_token',
                 value=access_token,
-                max_age=300,         # Optional: lifespan of the cookie in seconds
+                max_age=60,         # Optional: lifespan of the cookie in seconds
                 # path='/',             # Path where the cookie is valid
                 # domain="localhost",          # Domain where the cookie is valid
                 secure=False,         # Since using HTTP, ensure 'secure' is False
@@ -81,11 +117,11 @@ def login(request: Request):
             return response
         else:
             # If password is incorrect
-            return Response({'msg': 'Invalid username or password'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({'msg': 'Invalid username or password'}, status=status.HTTP_400_BAD_REQUEST)
 
     except User.DoesNotExist:
         # If user with the given username does not exist
-        return Response({'msg': 'Invalid username or password'}, status=status.HTTP_400_BAD_REQUEST)
+        return JsonResponse({'msg': 'Invalid username or password'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema(
@@ -120,13 +156,13 @@ def signup(request):
     username = user_account.get('username')
     user = User.objects.filter(username=username).exists()
     if user:
-        return Response({"msg": "Username is exist"}, status=status.HTTP_400_BAD_REQUEST)
+        return JsonResponse({"msg": "Username is exist"}, status=status.HTTP_400_BAD_REQUEST)
 
     serializer = UserAccountInfoSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
-        return Response({'msg': 'User created successfully', 'data': serializer.data}, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return JsonResponse({'msg': 'User created successfully', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+    return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema(
@@ -157,15 +193,16 @@ def update_user_account_info(request, user_id: int):
         # Retrieve the specific UserAccountInfo record by the UserAccount id
         user_info = UserAccountInfo.objects.get(user_account_id=user_id)
     except UserAccountInfo.DoesNotExist:
-        return Response({'msg': 'UserAccountInfo not found'}, status=status.HTTP_404_NOT_FOUND)
+        return JsonResponse({'msg': 'UserAccountInfo not found'}, status=status.HTTP_404_NOT_FOUND)
 
     # Use the serializer to update the UserAccountInfo
-    serializer = UserAccountInfoSerializer(user_info, data=request.data,
-                                           partial=True)  # partial=True allows partial updates
+    serializer = UserAccountInfoSerializer(
+        user_info, data=request.data, partial=True
+    )  # partial=True allows partial updates
     if serializer.is_valid():
         serializer.save()
-        return Response(
+        return JsonResponse(
             {'msg': 'UserAccountInfo updated successfully', 'data': serializer.data},
             status=status.HTTP_200_OK)
 
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

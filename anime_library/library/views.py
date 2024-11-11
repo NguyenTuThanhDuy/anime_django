@@ -2,15 +2,17 @@ from datetime import datetime
 import re
 
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 
 
 # Create your views here.
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_videos(request: Request):
     query_params = request.query_params
     limit = int(query_params.get("limit", 20))
