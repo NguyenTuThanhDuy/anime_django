@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.http import JsonResponse
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
@@ -38,7 +40,7 @@ class CustomTokenRefreshView(TokenRefreshView):
             response.set_cookie(
                 key='access_token',
                 value=access_token,
-                max_age=60,         # Optional: lifespan of the cookie in seconds
+                max_age=timedelta(hours=1),         # Optional: lifespan of the cookie in seconds
                 # path='/',             # Path where the cookie is valid
                 # domain="localhost",          # Domain where the cookie is valid
                 secure=False,         # Since using HTTP, ensure 'secure' is False
@@ -97,7 +99,7 @@ def login(request: Request):
             response.set_cookie(
                 key='access_token',
                 value=access_token,
-                max_age=60,         # Optional: lifespan of the cookie in seconds
+                max_age=timedelta(hours=1),         # Optional: lifespan of the cookie in seconds
                 # path='/',             # Path where the cookie is valid
                 # domain="localhost",          # Domain where the cookie is valid
                 secure=False,         # Since using HTTP, ensure 'secure' is False
@@ -111,7 +113,7 @@ def login(request: Request):
                 httponly=False,
                 secure=False,  # Set to True in production (for HTTPS)
                 samesite='Lax',
-                max_age=3600,  # Token expiry in seconds
+                max_age=timedelta(weeks=1),  # Token expiry in seconds
             )
 
             return response
@@ -138,10 +140,8 @@ def login(request: Request):
             "Login Example",
             summary="Successful login",
             value={
-                "user_account": {
-                    "username": "duy@gmail.com",
-                    "password": "Mot23Bon56!@"
-                },
+                "username": "duy@gmail.com",
+                "password": "Mot23Bon56!@",
                 "firstname": "John",
                 "lastname": "Doe",
                 "date_of_birth": "1990-01-01",
@@ -152,8 +152,7 @@ def login(request: Request):
 )
 @api_view(['POST'])
 def signup(request):
-    user_account = request.data.get('user_account')
-    username = user_account.get('username')
+    username = request.data.get('username')
     user = User.objects.filter(username=username).exists()
     if user:
         return JsonResponse({"msg": "Username is exist"}, status=status.HTTP_400_BAD_REQUEST)
