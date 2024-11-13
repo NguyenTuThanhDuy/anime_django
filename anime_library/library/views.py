@@ -134,7 +134,7 @@ def get_videos(request: Request):
         },
     ]
     if not query_title:
-        return Response({'msg': 'Get videos successfully', 'videos': data[offset: limit + offset]}, status=status.HTTP_200_OK)
+        return Response({'msg': 'Get videos successfully', 'videos': data[offset: limit + offset], 'total': len(data)}, status=status.HTTP_200_OK)
     pattern = f".*({query_title}.*)"
 
     response_data = [x for x in data if re.search(pattern, x['title'], re.IGNORECASE)]
