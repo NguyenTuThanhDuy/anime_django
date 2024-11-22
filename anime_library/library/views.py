@@ -1,15 +1,91 @@
 from datetime import datetime
 import re
 
+from django.http import JsonResponse
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
-from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
+from library.controllers.channel_controller import ChannelController
+from library.serializers import ChannelIDsSerializer, ChannelSerializer
 
 # Create your views here.
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_channel_by_id_api(request: Request, channel_id: str):
+    try:
+        res = ChannelController().get_channel_by_id(channel_id)
+        res = ChannelSerializer(res)
+        return JsonResponse({"data": res.data}, status=status.HTTP_200_OK)
 
+    except ObjectDoesNotExist:
+        return JsonResponse({"msg": "Resource not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return JsonResponse({"msg": "Error"}, status=status.HTTP_403_FORBIDDEN)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def get_channels_by_ids_api(request: Request):
+    # Validate the input using the serializer
+    serializer = ChannelIDsSerializer(data=request.data)
+    if not serializer.is_valid():
+        return JsonResponse(
+            {"msg": "Invalid input", "errors": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Extract validated data
+    channel_ids = serializer.validated_data['channel_ids']
+    if not channel_ids:
+        return JsonResponse({"msg": "Resource not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        res = ChannelController().get_list_channels_by_ids(channel_ids)
+        return JsonResponse({"data": list(res)}, status=status.HTTP_200_OK)
+    except ObjectDoesNotExist:
+        return JsonResponse({"msg": "Resource not found"}, status=status.HTTP_404_NOT_FOUND)
+    except ValidationError:
+        return JsonResponse({"msg": "Invalid datatype"}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+    except Exception as e:
+        return JsonResponse({"msg": "Error"}, status=status.HTTP_403_FORBIDDEN)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_channel(request: Request):
+    # Access the authenticated user
+    authenticated_user = request.user
+
+    # Include the user in the serializer data
+    data = request.data.copy()
+    data['channel_owner'] = authenticated_user.id
+    user_channel = ChannelController().get_channel_by_user_id(authenticated_user.id)
+    if user_channel:
+        return JsonResponse({"msg": "User has channel already, cannot create more"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Validate the data with the serializer
+    serializer = ChannelSerializer(data=data)
+    if not serializer.is_valid():
+        return JsonResponse(
+            {"msg": "Invalid input", "errors": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Save the channel with the authenticated user
+    channel = serializer.save()
+
+    # Serialize the created channel
+    serialized_channel = ChannelSerializer(channel)
+
+    return JsonResponse(
+        {"msg": "Success", "data": serialized_channel.data},
+        status=status.HTTP_201_CREATED
+    )
+
+@api_view(['PUT', 'POST'])
+def edit_channel(request: Request, channel_id: str):
+    pass
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -134,8 +210,8 @@ def get_videos(request: Request):
         },
     ]
     if not query_title:
-        return Response({'msg': 'Get videos successfully', 'videos': data[offset: limit + offset], 'total': len(data)}, status=status.HTTP_200_OK)
+        return JsonResponse({'msg': 'Get videos successfully', 'videos': data[offset: limit + offset], 'total': len(data)}, status=status.HTTP_200_OK)
     pattern = f".*({query_title}.*)"
 
     response_data = [x for x in data if re.search(pattern, x['title'], re.IGNORECASE)]
-    return Response({'msg': 'Get videos successfully', 'videos': response_data[offset: limit + offset]}, status=status.HTTP_200_OK)
+    return JsonResponse({'msg': 'Get videos successfully', 'videos': response_data[offset: limit + offset]}, status=status.HTTP_200_OK)

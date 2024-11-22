@@ -20,4 +20,7 @@ from library import views
 
 urlpatterns = [
     path('api/v1/videos', views.get_videos, name="videos"),
+    path('api/v1/channels/<uuid:channel_id>', views.get_channel_by_id_api, name='get_channel_by_id'),
+    path('api/v1/channels/', views.get_channels_by_ids_api, name='get_channels_by_ids'),
+    path('api/v1/channels/create', views.create_channel, name='create_channel')
 ]
