@@ -31,8 +31,8 @@ class VideoSerializer(serializers.ModelSerializer):
 class ChannelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Channel
-        fields = ('channel_id', 'channel_name', 'channel_owner', 'profile_url')
-        read_only_fields = ('channel_id', 'channel_hash', 'created_at')
+        fields = ('channel_id', 'channel_name', 'profile_url')
+        read_only_fields = ('channel_id', 'channel_hash', 'channel_owner', 'created_at')
 
     def create(self, validated_data):
         pattern = r"\s+"

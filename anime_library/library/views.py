@@ -85,7 +85,28 @@ def create_channel(request: Request):
 
 @api_view(['PUT', 'POST'])
 def edit_channel(request: Request, channel_id: str):
-    pass
+    data = request.data
+    try:
+        user_channel = ChannelController().get_channel_by_id(channel_id)
+    except ObjectDoesNotExist:
+        return JsonResponse({"msg": "Channel not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+    serializer = ChannelSerializer(data=data)
+    if not serializer.is_valid():
+        return JsonResponse(
+            {"msg": "Invalid input", "errors": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    channel = serializer.update(user_channel, serializer.data)
+
+    # Serialize the created channel
+    serialized_channel = ChannelSerializer(channel)
+
+    return JsonResponse(
+        {"msg": "Success", "data": serialized_channel.data},
+        status=status.HTTP_201_CREATED
+    )
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
